@@ -1,0 +1,54 @@
+# 00631L 只有 2014-10-31 之後的資料，沒有經歷過 2000 網路泡沫、2008 金融海嘯。
+# 這個設定檔改用「台灣加權指數」（^TWII，Yahoo Finance 最早可拉到 1997-07-02）模擬一檔
+# 合成的正2商品，去檢驗 50:50 降 MDD 的假設，在真實空頭市場中是否仍然成立。
+
+data:
+  index_ticker: "^TWII"   # 台灣加權指數（原始價格指數，不含息，詳見 README 限制說明）
+  start: "1997-07-02"
+  end: null
+  cache_dir: "data/cache"
+  refresh: false
+
+# 合成正2的槓桿倍數與年化費用假設（跟 config.yaml 的 leverage_analysis 用同一組假設）
+leverage: 2.0
+annual_cost: 0.011
+
+# 再平衡規則，跟 config.yaml 用同一套，方便橫向比較
+rebalance_rules:
+  - name: "不再平衡"
+    type: "none"
+  - name: "每月再平衡"
+    type: "calendar"
+    freq: "M"
+  - name: "每季再平衡"
+    type: "calendar"
+    freq: "Q"
+  - name: "偏離10%觸發"
+    type: "threshold"
+    band: 0.10
+  - name: "偏離15%觸發"
+    type: "threshold"
+    band: 0.15
+
+# 要重點檢視的歷史空頭區間。時間範圍刻意抓得比實際崩跌區間寬一些（通常從
+# 前一年初開始），確保區間內的 MDD 計算涵蓋到真正的區域高點，不會因為視窗
+# 起點剛好卡在下跌半路而低估最大回撤。
+stress_windows:
+  - name: "2000網路泡沫"
+    start: "2000-01-01"
+    end: "2001-12-31"
+  - name: "2008金融海嘯"
+    start: "2007-07-01"
+    end: "2009-03-31"
+  - name: "2015中國股災"
+    start: "2015-01-01"
+    end: "2015-12-31"
+  - name: "2018Q4修正"
+    start: "2018-01-01"
+    end: "2018-12-31"
+  - name: "2020新冠崩盤"
+    start: "2020-01-01"
+    end: "2020-04-30"
+  - name: "2022熊市"
+    start: "2022-01-01"
+    end: "2022-12-31"

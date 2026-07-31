@@ -1,0 +1,66 @@
+# 00631L 正2 ETF 50:50 回測設定
+# 修改這個檔案就能調整標的、回測期間、再平衡規則與要比較的組合，不需要碰程式碼。
+
+data:
+  start: "2014-11-01"    # 00631L 上市日附近；實際會依各標的可取得資料自動對齊到交集區間
+  end: null                # null = 抓到最新交易日
+  cache_dir: "data/cache"
+  refresh: false            # true 會強制重新下載，忽略本地快取
+
+# 現金／貨幣市場配對標的的假設年化報酬率（用來當作合成的「cash」資產）
+# 設 0 代表完全不生息，設 0.01 代表假設年化 1% 的貨幣市場報酬
+risk_free_annual_rate: 0.01
+
+# 標的清單：key 是程式內部代號，value 是 Yahoo Finance ticker
+assets:
+  leveraged: "00631L.TW"        # 元大台灣50正2（主角）
+  benchmark: "0050.TW"          # 元大台灣50（主要比較基準）
+  other_leveraged: "00675L.TW"  # 富邦臺灣加權正2（其他正2 ETF，可自行換成別檔）
+  # "cash" 不用在這裡設定，是程式自動生成的合成序列，年化報酬見上方 risk_free_annual_rate
+
+# 再平衡時的交易成本（basis points, 1bp = 0.01%），預設不計
+transaction_cost_bps: 0
+
+# 拆解「00631L 實際表現」有多少來自波動耗損、多少來自費用/其他因素
+# （逆價差捕捉股息與否等），跟「單純理論上乘以倍數」做對照
+leverage_analysis:
+  leverage: 2.0
+  annual_cost: 0.011   # 00631L 概略年化總開銷比率假設，可依公開說明書調整
+  base_baseline: "0050 單押"       # 拿哪個 baseline 當作「1倍」的參照
+  leveraged_baseline: "00631L 單押"  # 拿哪個 baseline 當作「實際正2」
+
+# 再平衡規則：每一種都會套用到下面每一組 50:50 配對
+rebalance_rules:
+  - name: "不再平衡"
+    type: "none"
+  - name: "每月再平衡"
+    type: "calendar"
+    freq: "M"
+  - name: "每季再平衡"
+    type: "calendar"
+    freq: "Q"
+  - name: "偏離10%觸發"
+    type: "threshold"
+    band: 0.10
+  - name: "偏離15%觸發"
+    type: "threshold"
+    band: 0.15
+
+strategies:
+  # 單押基準策略（100% 部位），不套用再平衡規則
+  baselines:
+    - name: "00631L 單押"
+      weights: {leveraged: 1.0}
+    - name: "0050 單押"
+      weights: {benchmark: 1.0}
+    - name: "00675L 單押"
+      weights: {other_leveraged: 1.0}
+
+  # 50:50 配對，每一組都會依上面全部的 rebalance_rules 各跑一次
+  pairs:
+    - name: "00631L + 0050"
+      legs: [leveraged, benchmark]
+    - name: "00631L + 現金"
+      legs: [leveraged, cash]
+    - name: "00631L + 00675L"
+      legs: [leveraged, other_leveraged]
